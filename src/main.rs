@@ -1,4 +1,4 @@
-use clap::{arg, ArgMatches, Command};
+use clap::{arg, Command};
 
 fn cli() -> Command {
     Command::new("cable_lock")
