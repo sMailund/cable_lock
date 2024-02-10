@@ -1,7 +1,6 @@
 pub mod input_reader;
 pub mod user_store;
 
-use std::io;
 use std::io::Write;
 
 use password_auth::{generate_hash, VerifyError};
