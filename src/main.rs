@@ -1,8 +1,8 @@
+use clap::{arg, Command};
+use password_auth::{generate_hash, VerifyError};
 use std::io;
 use std::io::Write;
 use std::process::exit;
-use clap::{arg, Command};
-use password_auth::{generate_hash, VerifyError};
 
 fn cli() -> Command {
     Command::new("cable_lock")
@@ -29,7 +29,6 @@ fn verify_password(user: User, password: &str) -> Result<(), VerifyError> {
     password_auth::verify_password(with_salt, &*user.hash)
 }
 
-
 trait InputReader {
     fn get_username_and_password(&self) -> (String, String);
 }
@@ -41,7 +40,9 @@ impl InputReader for InputReaderImpl {
         io::stdout().flush().expect("Couldn't flush stdout");
 
         let mut user_name = String::new();
-        io::stdin().read_line(&mut user_name).expect("Failed to read line");
+        io::stdin()
+            .read_line(&mut user_name)
+            .expect("Failed to read line");
 
         let password = rpassword::prompt_password("Password: ").unwrap();
 
@@ -112,16 +113,17 @@ fn main() {
     };
 }
 
-fn authenticate<I: InputReader, U: UserStore>(input_reader: &I, user_store: &U) -> Result<(), String> {
+fn authenticate<I: InputReader, U: UserStore>(
+    input_reader: &I,
+    user_store: &U,
+) -> Result<(), String> {
     let (user_name, password) = input_reader.get_username_and_password();
     match user_store.get_user_by_username(&user_name) {
-        Ok(user) => {
-            match verify_password(user, &password) {
-                Ok(_) => Ok(()),
-                Err(_) => Err("incorrect username or password".to_string())
-            }
-        }
-        Err(_) => Err("incorrect username or password".to_string())
+        Ok(user) => match verify_password(user, &password) {
+            Ok(_) => Ok(()),
+            Err(_) => Err("incorrect username or password".to_string()),
+        },
+        Err(_) => Err("incorrect username or password".to_string()),
     }
 }
 
