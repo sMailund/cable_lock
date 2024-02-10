@@ -1,5 +1,7 @@
+use std::error::Error;
 use clap::{arg, Command};
-use password_auth::VerifyError;
+use password_auth::{generate_hash, VerifyError};
+use rand::distributions::Alphanumeric;
 
 fn cli() -> Command {
     Command::new("cable_lock")
@@ -24,6 +26,56 @@ struct User {
 fn verify_password(user: User, password: &str) -> Result<(), VerifyError> {
     let with_salt = format!("{}{}", password, user.salt);
     password_auth::verify_password(with_salt, &*user.hash)
+}
+
+struct Authenticator {
+    user_store: dyn UserStore
+}
+
+impl Authenticator {
+    fn authenticate() -> Result<(), String> {
+        Err("".to_string())
+    }
+}
+
+trait InputReader {
+    fn get_username_and_password() -> (String, String);
+}
+
+struct InputReaderFake;
+
+impl InputReader for InputReaderFake {
+    fn get_username_and_password() -> (String, String) {
+        ("user_name".to_string(), "password".to_string())
+    }
+}
+
+
+
+trait UserStore {
+    fn get_user_by_username(&self, username: &str) -> Result<User, String>;
+}
+
+struct UserStoreFake;
+impl UserStore for UserStoreFake {
+    fn get_user_by_username(&self, username: &str) -> Result<User, String> {
+        if username != "test_user" {
+            return Err("no such user".to_string());
+        }
+
+        let salt = "salt".to_string();
+        let password = "password";
+        let salted = format!("{}{}", password, salt);
+        let hash = generate_hash(salted);
+
+        let user = User {
+            username: "test_user".to_string(),
+            hash,
+            salt,
+        };
+
+        Ok(user)
+    }
 }
 
 fn main() {
