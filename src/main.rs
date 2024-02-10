@@ -1,4 +1,6 @@
 use std::io;
+use std::io::Write;
+use std::process::exit;
 use clap::{arg, Command};
 use password_auth::{generate_hash, VerifyError};
 
@@ -35,14 +37,15 @@ trait InputReader {
 struct InputReaderImpl;
 impl InputReader for InputReaderImpl {
     fn get_username_and_password(&self) -> (String, String) {
-        println!("Username: ");
+        print!("Username: ");
+        io::stdout().flush().expect("Couldn't flush stdout");
 
         let mut user_name = String::new();
         io::stdin().read_line(&mut user_name).expect("Failed to read line");
 
         let password = rpassword::prompt_password("Password: ").unwrap();
 
-        (user_name, password)
+        (user_name.trim().to_string(), password)
     }
 }
 
@@ -90,7 +93,15 @@ fn main() {
     match matches.subcommand() {
         Some(("authorization_grant", sub_matches)) => {
             let scope = sub_matches.get_one::<String>("SCOPE").expect("required");
-            println!("requested {}", scope);
+            let input_reader = InputReaderImpl;
+            let user_store = UserStoreFake;
+            match authenticate(&input_reader, &user_store) {
+                Ok(_) => {
+                    println!("SUCCESS");
+                    println!("requested {}", scope);
+                }
+                Err(_) => exit(-1)
+            }
         }
         _ => {
             cli().print_help().expect("failed to print help");
