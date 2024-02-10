@@ -6,6 +6,8 @@ use std::io::Write;
 
 use password_auth::{generate_hash, VerifyError};
 
+const ERROR_INCORRECT_USER_NAME_OR_PASSWORD: &str = "incorrect username or password";
+
 fn verify_password(user: user_store::User, password: &str) -> Result<(), VerifyError> {
     let with_salt = format!("{}{}", password, user.salt);
     password_auth::verify_password(with_salt, &*user.hash)
@@ -16,13 +18,15 @@ pub fn authenticate<I: input_reader::InputReader, U: user_store::UserStore>(
     user_store: &U,
 ) -> Result<(), String> {
     let (user_name, password) = input_reader.get_username_and_password();
-    match user_store.get_user_by_username(&user_name) {
-        Ok(user) => match verify_password(user, &password) {
-            Ok(_) => Ok(()),
-            Err(_) => Err("incorrect username or password".to_string()),
-        },
-        Err(_) => Err("incorrect username or password".to_string()),
-    }
+
+    user_store
+        .get_user_by_username(&user_name)
+        .map_err(|_| ERROR_INCORRECT_USER_NAME_OR_PASSWORD.to_string())
+        .and_then(|user| {
+            verify_password(user, &password)
+                .map_err(|_| ERROR_INCORRECT_USER_NAME_OR_PASSWORD.to_string())
+        })
+        .map(|_| ())
 }
 
 #[cfg(test)]
