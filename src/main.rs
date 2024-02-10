@@ -26,15 +26,6 @@ fn verify_password(user: User, password: &str) -> Result<(), VerifyError> {
     password_auth::verify_password(with_salt, &*user.hash)
 }
 
-struct Authenticator {
-    user_store: dyn UserStore,
-}
-
-impl Authenticator {
-    fn authenticate() -> Result<(), String> {
-        Err("".to_string())
-    }
-}
 
 trait InputReader {
     fn get_username_and_password(&self) -> (&str, &str);
@@ -90,6 +81,10 @@ fn main() {
     };
 }
 
+fn authenticate<I: InputReader, U: UserStore>(input_reader: &I, user_store: &U) -> Result<(), String> {
+    Err("".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use password_auth::generate_hash;
@@ -112,6 +107,18 @@ mod tests {
         };
 
         let result = verify_password(user, password);
+        assert!(result.is_ok())
+    }
+
+    #[test]
+    fn test_authenticate__valid_credentials__return_ok() {
+        let input_reader_fake = InputReaderFake {
+            user_name: "test_user".to_string(),
+            password: "password".to_string(),
+        };
+        let user_store = UserStoreFake;
+
+        let result = authenticate(&input_reader_fake, &user_store);
         assert!(result.is_ok())
     }
 }
