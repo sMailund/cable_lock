@@ -1,3 +1,4 @@
+use std::io;
 use clap::{arg, Command};
 use password_auth::{generate_hash, VerifyError};
 
@@ -28,7 +29,21 @@ fn verify_password(user: User, password: &str) -> Result<(), VerifyError> {
 
 
 trait InputReader {
-    fn get_username_and_password(&self) -> (&str, &str);
+    fn get_username_and_password(&self) -> (String, String);
+}
+
+struct InputReaderImpl;
+impl InputReader for InputReaderImpl {
+    fn get_username_and_password(&self) -> (String, String) {
+        println!("Username: ");
+
+        let mut user_name = String::new();
+        io::stdin().read_line(&mut user_name).expect("Failed to read line");
+
+        let password = rpassword::prompt_password("Password: ").unwrap();
+
+        (user_name, password)
+    }
 }
 
 struct InputReaderFake {
@@ -37,8 +52,10 @@ struct InputReaderFake {
 }
 
 impl InputReader for InputReaderFake {
-    fn get_username_and_password(&self) -> (&str, &str) {
-        (&self.user_name, &self.password)
+    fn get_username_and_password(&self) -> (String, String) {
+        let usn = self.user_name.to_string();
+        let pwd = self.password.clone().to_string();
+        (usn, pwd)
     }
 }
 
@@ -83,8 +100,8 @@ fn main() {
 
 fn authenticate<I: InputReader, U: UserStore>(input_reader: &I, user_store: &U) -> Result<(), String> {
     let (user_name, password) = input_reader.get_username_and_password();
-    let user = user_store.get_user_by_username(user_name)?;
-    match verify_password(user, password) {
+    let user = user_store.get_user_by_username(&user_name)?;
+    match verify_password(user, &password) {
         Ok(_) => Ok(()),
         Err(_) => Err("incorrect username or password".to_string())
     }
