@@ -1,17 +1,17 @@
-pub mod InputReader;
-pub mod UserStore;
+pub mod input_reader;
+pub mod user_store;
 
 use std::io;
 use std::io::Write;
 
 use password_auth::{generate_hash, VerifyError};
 
-fn verify_password(user: UserStore::User, password: &str) -> Result<(), VerifyError> {
+fn verify_password(user: user_store::User, password: &str) -> Result<(), VerifyError> {
     let with_salt = format!("{}{}", password, user.salt);
     password_auth::verify_password(with_salt, &*user.hash)
 }
 
-pub fn authenticate<I: InputReader::InputReader, U: UserStore::UserStore>(
+pub fn authenticate<I: input_reader::InputReader, U: user_store::UserStore>(
     input_reader: &I,
     user_store: &U,
 ) -> Result<(), String> {
@@ -27,7 +27,7 @@ pub fn authenticate<I: InputReader::InputReader, U: UserStore::UserStore>(
 
 #[cfg(test)]
 mod tests {
-    use crate::authentication::UserStore::UserStoreFake;
+    use crate::authentication::user_store::UserStoreFake;
     use password_auth::generate_hash;
     use rand::distributions::{Alphanumeric, DistString};
 
@@ -41,7 +41,7 @@ mod tests {
         let salted = format!("{}{}", password, salt);
         let hash = generate_hash(salted);
 
-        let user = UserStore::User {
+        let user = user_store::User {
             username: "test_user".to_string(),
             hash,
             salt,
@@ -104,7 +104,7 @@ mod tests {
         password: String,
     }
 
-    impl InputReader::InputReader for InputReaderFake {
+    impl input_reader::InputReader for InputReaderFake {
         fn get_username_and_password(&self) -> (String, String) {
             let usn = self.user_name.to_string();
             let pwd = self.password.clone().to_string();
