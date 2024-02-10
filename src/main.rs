@@ -100,7 +100,10 @@ fn main() {
                     println!("SUCCESS");
                     println!("requested {}", scope);
                 }
-                Err(_) => exit(-1)
+                Err(err) => {
+                    println!("{}", err);
+                    exit(1)
+                }
             }
         }
         _ => {
@@ -111,9 +114,13 @@ fn main() {
 
 fn authenticate<I: InputReader, U: UserStore>(input_reader: &I, user_store: &U) -> Result<(), String> {
     let (user_name, password) = input_reader.get_username_and_password();
-    let user = user_store.get_user_by_username(&user_name)?;
-    match verify_password(user, &password) {
-        Ok(_) => Ok(()),
+    match user_store.get_user_by_username(&user_name) {
+        Ok(user) => {
+            match verify_password(user, &password) {
+                Ok(_) => Ok(()),
+                Err(_) => Err("incorrect username or password".to_string())
+            }
+        }
         Err(_) => Err("incorrect username or password".to_string())
     }
 }
