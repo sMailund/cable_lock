@@ -126,4 +126,40 @@ mod tests {
         let result = authenticate(&input_reader_fake, &user_store);
         assert!(result.is_ok())
     }
+
+    #[test]
+    fn test_authenticate__invalid_password__return_err() {
+        let input_reader_fake = InputReaderFake {
+            user_name: "test_user".to_string(),
+            password: "wrong_password".to_string(),
+        };
+        let user_store = UserStoreFake;
+
+        let result = authenticate(&input_reader_fake, &user_store);
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn test_authenticate__unknown_user__returns_err() {
+        let input_reader_fake = InputReaderFake {
+            user_name: "another_user".to_string(),
+            password: "password".to_string(),
+        };
+        let user_store = UserStoreFake;
+
+        let result = authenticate(&input_reader_fake, &user_store);
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn test_authenticate__both_wrong_returns_err() {
+        let input_reader_fake = InputReaderFake {
+            user_name: "another_user".to_string(),
+            password: "incorrect_password".to_string(),
+        };
+        let user_store = UserStoreFake;
+
+        let result = authenticate(&input_reader_fake, &user_store);
+        assert!(result.is_err())
+    }
 }
