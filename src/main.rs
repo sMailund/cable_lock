@@ -37,14 +37,17 @@ impl Authenticator {
 }
 
 trait InputReader {
-    fn get_username_and_password() -> (String, String);
+    fn get_username_and_password(&self) -> (&str, &str);
 }
 
-struct InputReaderFake;
+struct InputReaderFake {
+    user_name: String,
+    password: String,
+}
 
 impl InputReader for InputReaderFake {
-    fn get_username_and_password() -> (String, String) {
-        ("user_name".to_string(), "password".to_string())
+    fn get_username_and_password(&self) -> (&str, &str) {
+        (&self.user_name, &self.password)
     }
 }
 
