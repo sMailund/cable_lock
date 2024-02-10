@@ -1,4 +1,3 @@
-use crate::authentication::User;
 use password_auth::generate_hash;
 
 pub(crate) trait UserStore {
@@ -25,4 +24,10 @@ impl UserStore for UserStoreFake {
 
         Ok(user)
     }
+}
+
+pub struct User {
+    pub(crate) username: String,
+    pub(crate) hash: String,
+    pub(crate) salt: String,
 }

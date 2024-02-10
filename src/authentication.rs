@@ -6,13 +6,7 @@ use std::io::Write;
 
 use password_auth::{generate_hash, VerifyError};
 
-struct User {
-    username: String,
-    hash: String,
-    salt: String,
-}
-
-fn verify_password(user: User, password: &str) -> Result<(), VerifyError> {
+fn verify_password(user: UserStore::User, password: &str) -> Result<(), VerifyError> {
     let with_salt = format!("{}{}", password, user.salt);
     password_auth::verify_password(with_salt, &*user.hash)
 }
@@ -47,7 +41,7 @@ mod tests {
         let salted = format!("{}{}", password, salt);
         let hash = generate_hash(salted);
 
-        let user = User {
+        let user = UserStore::User {
             username: "test_user".to_string(),
             hash,
             salt,
