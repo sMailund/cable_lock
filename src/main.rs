@@ -1,7 +1,5 @@
-use std::error::Error;
 use clap::{arg, Command};
 use password_auth::{generate_hash, VerifyError};
-use rand::distributions::Alphanumeric;
 
 fn cli() -> Command {
     Command::new("cable_lock")
@@ -29,7 +27,7 @@ fn verify_password(user: User, password: &str) -> Result<(), VerifyError> {
 }
 
 struct Authenticator {
-    user_store: dyn UserStore
+    user_store: dyn UserStore,
 }
 
 impl Authenticator {
@@ -49,8 +47,6 @@ impl InputReader for InputReaderFake {
         ("user_name".to_string(), "password".to_string())
     }
 }
-
-
 
 trait UserStore {
     fn get_user_by_username(&self, username: &str) -> Result<User, String>;
@@ -83,15 +79,11 @@ fn main() {
     match matches.subcommand() {
         Some(("authorization_grant", sub_matches)) => {
             let scope = sub_matches.get_one::<String>("SCOPE").expect("required");
-            println!(
-                "requested {}",
-                scope
-            );
+            println!("requested {}", scope);
         }
         _ => {
             cli().print_help().expect("failed to print help");
         }
-
     };
 }
 
@@ -119,5 +111,4 @@ mod tests {
         let result = verify_password(user, password);
         assert!(result.is_ok())
     }
-
 }
