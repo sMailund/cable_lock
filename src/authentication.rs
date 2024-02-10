@@ -1,3 +1,6 @@
+pub mod InputReader;
+pub mod UserStore;
+
 use std::io;
 use std::io::Write;
 
@@ -14,67 +17,7 @@ fn verify_password(user: User, password: &str) -> Result<(), VerifyError> {
     password_auth::verify_password(with_salt, &*user.hash)
 }
 
-trait InputReader {
-    fn get_username_and_password(&self) -> (String, String);
-}
-
-pub(crate) struct InputReaderImpl;
-impl InputReader for InputReaderImpl {
-    fn get_username_and_password(&self) -> (String, String) {
-        print!("Username: ");
-        io::stdout().flush().expect("Couldn't flush stdout");
-
-        let mut user_name = String::new();
-        io::stdin()
-            .read_line(&mut user_name)
-            .expect("Failed to read line");
-
-        let password = rpassword::prompt_password("Password: ").unwrap();
-
-        (user_name.trim().to_string(), password)
-    }
-}
-
-struct InputReaderFake {
-    user_name: String,
-    password: String,
-}
-
-impl InputReader for InputReaderFake {
-    fn get_username_and_password(&self) -> (String, String) {
-        let usn = self.user_name.to_string();
-        let pwd = self.password.clone().to_string();
-        (usn, pwd)
-    }
-}
-
-trait UserStore {
-    fn get_user_by_username(&self, username: &str) -> Result<User, String>;
-}
-
-pub(crate) struct UserStoreFake;
-impl UserStore for UserStoreFake {
-    fn get_user_by_username(&self, username: &str) -> Result<User, String> {
-        if username != "test_user" {
-            return Err("no such user".to_string());
-        }
-
-        let salt = "salt".to_string();
-        let password = "password";
-        let salted = format!("{}{}", password, salt);
-        let hash = generate_hash(salted);
-
-        let user = User {
-            username: "test_user".to_string(),
-            hash,
-            salt,
-        };
-
-        Ok(user)
-    }
-}
-
-pub fn authenticate<I: InputReader, U: UserStore>(
+pub fn authenticate<I: InputReader::InputReader, U: UserStore::UserStore>(
     input_reader: &I,
     user_store: &U,
 ) -> Result<(), String> {
@@ -90,6 +33,7 @@ pub fn authenticate<I: InputReader, U: UserStore>(
 
 #[cfg(test)]
 mod tests {
+    use crate::authentication::UserStore::UserStoreFake;
     use password_auth::generate_hash;
     use rand::distributions::{Alphanumeric, DistString};
 
@@ -159,5 +103,18 @@ mod tests {
 
         let result = authenticate(&input_reader_fake, &user_store);
         assert!(result.is_err())
+    }
+
+    struct InputReaderFake {
+        user_name: String,
+        password: String,
+    }
+
+    impl InputReader::InputReader for InputReaderFake {
+        fn get_username_and_password(&self) -> (String, String) {
+            let usn = self.user_name.to_string();
+            let pwd = self.password.clone().to_string();
+            (usn, pwd)
+        }
     }
 }

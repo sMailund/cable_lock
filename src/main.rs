@@ -23,8 +23,8 @@ fn main() {
     match matches.subcommand() {
         Some(("authorization_grant", sub_matches)) => {
             let scope = sub_matches.get_one::<String>("SCOPE").expect("required");
-            let input_reader = authentication::InputReaderImpl;
-            let user_store = authentication::UserStoreFake;
+            let input_reader = authentication::InputReader::InputReaderImpl;
+            let user_store = authentication::UserStore::UserStoreFake;
             match authentication::authenticate(&input_reader, &user_store) {
                 Ok(_) => {
                     println!("SUCCESS");
