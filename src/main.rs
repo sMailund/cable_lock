@@ -25,11 +25,7 @@ fn cli() -> Command {
         )
 }
 
-
-
 fn main() {
-
-
     let matches = cli().get_matches();
     match matches.subcommand() {
         Some(("authorization_request", sub_matches)) => {
