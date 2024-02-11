@@ -11,7 +11,7 @@ fn cli() -> Command {
         .arg_required_else_help(true)
         .allow_external_subcommands(true)
         .subcommand(
-            Command::new("authorization_grant")
+            Command::new("authorization_request")
                 .about("Grant authorization for a client requesting to access resources")
                 .arg(arg!(<SCOPE> "The requested scope"))
                 .arg_required_else_help(true),
@@ -21,7 +21,7 @@ fn cli() -> Command {
 fn main() {
     let matches = cli().get_matches();
     match matches.subcommand() {
-        Some(("authorization_grant", sub_matches)) => {
+        Some(("authorization_request", sub_matches)) => {
             let scope = sub_matches.get_one::<String>("SCOPE").expect("required");
             let input_reader = authentication::input_reader::InputReaderImpl;
             let user_store = authentication::user_store::UserStoreFake;
