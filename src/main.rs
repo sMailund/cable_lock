@@ -40,7 +40,7 @@ fn main() {
             let user_store = authentication::user_store::UserStoreFake;
             match authentication::authenticate(&input_reader, &user_store) {
                 Ok(_) => {
-                    let token = create_auth_code("username", vec!["scope"], &mut conn);
+                    let token = create_auth_code("username", vec![scope], &mut conn);
                     match token {
                         Ok(token) => {
                             println!("{}", token);
