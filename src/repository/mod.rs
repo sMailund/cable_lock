@@ -10,7 +10,7 @@ use crate::repository::DatabaseError::{ConnectionError, RowNotFound};
 
 mod authorization_code_entry;
 
-const TOKEN_LENGTH: usize = 32;
+const TOKEN_LENGTH: usize = 64;
 
 pub fn apply_migrations(mut conn: &mut Connection) {
     let migrations = Migrations::new(vec![
