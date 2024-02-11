@@ -118,6 +118,25 @@ mod tests {
     }
 
     #[test]
+    fn should_retrieve_all_stored_scopes() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        apply_migrations(&mut conn);
+
+        let scopes = vec!["there", "are", "many", "scopes"];
+        let code = create_auth_code("user", scopes, &conn).unwrap();
+        let response = get_entry_by_auth_code(code.as_str(), &conn);
+        assert!(response.is_ok());
+
+        let auth_code_entry = response.unwrap();
+        let scopes = auth_code_entry.scopes;
+        assert_eq!(4, scopes.len());
+        assert!(scopes.contains(&"there".to_string()));
+        assert!(scopes.contains(&"are".to_string()));
+        assert!(scopes.contains(&"many".to_string()));
+        assert!(scopes.contains(&"scopes".to_string()));
+    }
+
+    #[test]
     fn should_return_none_if_invalid_code() {
         let mut conn = Connection::open_in_memory().unwrap();
         apply_migrations(&mut conn);
