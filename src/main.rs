@@ -16,6 +16,12 @@ fn cli() -> Command {
                 .arg(arg!(<SCOPE> "The requested scope"))
                 .arg_required_else_help(true),
         )
+        .subcommand(
+            Command::new("token")
+                .about("Exchange authorization grant for access token")
+                .arg(arg!(<AUTH_CODE> "Authorization grant"))
+                .arg_required_else_help(true),
+        )
 }
 
 fn main() {
@@ -35,6 +41,9 @@ fn main() {
                     exit(1)
                 }
             }
+        }
+        Some(("token", sub_matches)) => {
+            // TODO:
         }
         _ => {
             cli().print_help().expect("failed to print help");
