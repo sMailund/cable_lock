@@ -1,5 +1,6 @@
 mod authorization_code_entry;
 
+use crate::repository::authorization_code_entry::AuthorizationCodeEntry;
 use rand::distributions::{Alphanumeric, DistString};
 use rusqlite::{params, Connection, Error as RusqliteError};
 use rusqlite_migration::{Migrations, M};
@@ -43,19 +44,19 @@ fn create_auth_code(
 fn get_entry_by_auth_code(
     auth_code: &str,
     connection: &Connection,
-) -> Result<Option<String>, RusqliteError> {
-    let mut statement =
-        connection.prepare("SELECT subject FROM authorization_code WHERE auth_code = ?1")?;
-    let mut rows = statement.query(params![auth_code])?;
+) -> Result<Option<AuthorizationCodeEntry>, RusqliteError> {
+    let mut statement = connection
+        .prepare("SELECT subject, scopes FROM authorization_code WHERE auth_code = ?1")?;
+    let mut rows = statement.query_map(params![auth_code], |row| {
+        Ok(AuthorizationCodeEntry::new(row.get(0)?, row.get(1)?))
+    })?;
 
-    if let Some(row) = rows.next()? {
-        let result = row.get(0);
-        match result {
-            Ok(result) => Ok(result),
+    match rows.next() {
+        None => Ok(None),
+        Some(result) => match result {
+            Ok(result) => Ok(Some(result)),
             Err(_) => Ok(None),
-        }
-    } else {
-        Ok(None)
+        },
     }
 }
 
@@ -90,8 +91,8 @@ mod tests {
             get_entry_by_auth_code(code.as_str(), &conn).expect("failed to get by auth code");
 
         assert!(response.is_some());
-        let string = response.unwrap();
-        assert_eq!("user", string);
+        let auth_code_entry = response.unwrap();
+        assert_eq!("user", auth_code_entry.subject);
     }
 
     #[test]
