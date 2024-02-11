@@ -12,7 +12,7 @@ mod authorization_code_entry;
 
 const TOKEN_LENGTH: usize = 32;
 
-fn apply_migrations(mut conn: &mut Connection) {
+pub fn apply_migrations(mut conn: &mut Connection) {
     let migrations = Migrations::new(vec![
         M::up("create table authorization_code(auth_code TEXT PRIMARY KEY, subject TEXT NOT NULL, scopes TEXT NOT NULL);")
             .down("drop table authorization_code;"),
@@ -23,7 +23,7 @@ fn apply_migrations(mut conn: &mut Connection) {
     migrations.to_latest(&mut conn).unwrap();
 }
 
-fn create_auth_code(
+pub fn create_auth_code(
     username: &str,
     scopes: Vec<&str>,
     connection: &Connection,

@@ -1,6 +1,8 @@
 use std::process::exit;
 
+use crate::repository::{apply_migrations, create_auth_code};
 use clap::{arg, Command};
+use rusqlite::Connection;
 
 pub mod authentication;
 pub mod repository;
@@ -27,6 +29,10 @@ fn cli() -> Command {
 
 fn main() {
     let matches = cli().get_matches();
+
+    let mut conn = Connection::open("./storage.db").unwrap();
+    apply_migrations(&mut conn);
+
     match matches.subcommand() {
         Some(("authorization_request", sub_matches)) => {
             let scope = sub_matches.get_one::<String>("SCOPE").expect("required");
@@ -34,8 +40,13 @@ fn main() {
             let user_store = authentication::user_store::UserStoreFake;
             match authentication::authenticate(&input_reader, &user_store) {
                 Ok(_) => {
-                    println!("SUCCESS");
-                    println!("requested {}", scope);
+                    let token = create_auth_code("username", vec!["scope"], &mut conn);
+                    match token {
+                        Ok(token) => {
+                            println!("{}", token);
+                        }
+                        Err(_) => eprintln!("failed to get token"),
+                    }
                 }
                 Err(err) => {
                     eprintln!("{}", err);
