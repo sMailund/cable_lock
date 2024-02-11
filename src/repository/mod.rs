@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::io::ErrorKind::NotFound;
 
 use rand::distributions::{Alphanumeric, DistString};
 use rusqlite::{params, Connection};
@@ -63,19 +64,13 @@ fn get_entry_by_auth_code(
         .prepare("SELECT subject, scopes FROM authorization_code WHERE auth_code = ?1")
         .map_err(|_| ConnectionError)?;
 
-    let mut rows = statement
-        .query_map(params![auth_code], |row| {
+    let rows = statement
+        .query_row(params![auth_code], |row| {
             Ok(AuthorizationCodeEntry::new(row.get(0)?, row.get(1)?))
         })
-        .map_err(|_| ConnectionError)?;
+        .map_err(|_| RowNotFound)?;
 
-    match rows.next() {
-        None => Err(RowNotFound),
-        Some(result) => match result {
-            Ok(result) => Ok(result),
-            Err(_) => Err(RowNotFound),
-        },
-    }
+    Ok(rows)
 }
 
 #[cfg(test)]
