@@ -5,25 +5,26 @@ use password_auth::VerifyError;
 
 const ERROR_INCORRECT_USER_NAME_OR_PASSWORD: &str = "incorrect username or password";
 
-fn verify_password(user: user_store::User, password: &str) -> Result<(), VerifyError> {
-    let with_salt = format!("{}{}", password, user.salt);
-    password_auth::verify_password(with_salt, &*user.hash)
+fn verify_password(password: &str, salt: String, hash: String) -> Result<(), VerifyError> {
+    let with_salt = format!("{}{}", password, salt);
+    password_auth::verify_password(with_salt, &*hash)
 }
 
 pub fn authenticate<I: input_reader::InputReader, U: user_store::UserStore>(
     input_reader: &I,
     user_store: &U,
-) -> Result<(), String> {
+) -> Result<String, String> {
     let (user_name, password) = input_reader.get_username_and_password();
 
     user_store
         .get_user_by_username(&user_name)
         .map_err(|_| ERROR_INCORRECT_USER_NAME_OR_PASSWORD.to_string())
         .and_then(|user| {
-            verify_password(user, &password)
-                .map_err(|_| ERROR_INCORRECT_USER_NAME_OR_PASSWORD.to_string())
+            let username = user.username;
+            verify_password(&password, user.salt, user.hash)
+                .map_err(|_| ERROR_INCORRECT_USER_NAME_OR_PASSWORD.to_string())?;
+            Ok(username)
         })
-        .map(|_| ())
 }
 
 #[cfg(test)]
@@ -48,7 +49,7 @@ mod tests {
             salt,
         };
 
-        let result = verify_password(user, password);
+        let result = verify_password(password, user.salt, user.hash);
         assert!(result.is_ok())
     }
 
