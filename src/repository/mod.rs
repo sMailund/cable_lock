@@ -30,19 +30,14 @@ pub fn create_auth_code(
 ) -> Result<String, String> {
     let string = Alphanumeric.sample_string(&mut rand::thread_rng(), AUTH_CODE_LENGTH);
 
-    // here
     let scopes_string = scopes.join(",");
 
-    let insert_result = connection.execute(
+    connection.execute(
         "INSERT INTO authorization_code (auth_code, subject, scopes) VALUES (?1, ?2, ?3)",
         params![&string, username, scopes_string],
-    );
+    ).map_err(|_| "failed to insert to db".to_string())?;
 
-    if insert_result.is_err() {
-        Err("failed to insert to db".to_string())
-    } else {
-        Ok(string)
-    }
+    Ok(string)
 }
 
 #[derive(Debug)]
