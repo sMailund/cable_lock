@@ -1,6 +1,6 @@
 use rand::distributions::{Alphanumeric, DistString};
 use rand::Rng;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, Error as RusqliteError};
 use std::error::Error;
 
 const TOKEN_LENGTH: usize = 32;
@@ -31,15 +31,13 @@ fn create_auth_code(
 fn get_entry_by_auth_code(
     auth_code: &str,
     connection: &Connection,
-) -> Result<Option<String>, String> {
+) -> Result<Option<String>, RusqliteError> {
     let mut statement = connection
-        .prepare("SELECT subject FROM authorization_code WHERE auth_code = ?1")
-        .map_err(|_| "failed to prepare statement")?;
+        .prepare("SELECT subject FROM authorization_code WHERE auth_code = ?1")?;
     let mut rows = statement
-        .query(params![auth_code])
-        .map_err(|_| "failed to query database")?;
+        .query(params![auth_code])?;
 
-    if let Some(row) = rows.next().map_err(|_| "failed")? {
+    if let Some(row) = rows.next()? {
         let result = row.get(0);
         match result {
             Ok(result) => Ok(result),
