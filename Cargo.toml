@@ -10,4 +10,5 @@ clap = { version = "4.5.0", features = ["derive"] }
 password-auth = "1.0.0"
 rand = "0.8.5"
 rpassword = "7.3.1"
-sqlite = "0.33.0"
+rusqlite = "0.30.0"
+rusqlite_migration = "1.1.0"
