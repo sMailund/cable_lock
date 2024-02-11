@@ -10,7 +10,7 @@ use crate::repository::DatabaseError::{ConnectionError, RowNotFound};
 
 mod authorization_code_entry;
 
-const TOKEN_LENGTH: usize = 64;
+const AUTH_CODE_LENGTH: usize = 64;
 
 pub fn apply_migrations(mut conn: &mut Connection) {
     let migrations = Migrations::new(vec![
@@ -28,7 +28,7 @@ pub fn create_auth_code(
     scopes: Vec<&str>,
     connection: &Connection,
 ) -> Result<String, String> {
-    let string = Alphanumeric.sample_string(&mut rand::thread_rng(), TOKEN_LENGTH);
+    let string = Alphanumeric.sample_string(&mut rand::thread_rng(), AUTH_CODE_LENGTH);
 
     // here
     let scopes_string = scopes.join(",");
@@ -89,7 +89,7 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::repository::{
-        apply_migrations, create_auth_code, get_entry_by_auth_code, DatabaseError, TOKEN_LENGTH,
+        apply_migrations, create_auth_code, get_entry_by_auth_code, DatabaseError, AUTH_CODE_LENGTH,
     };
 
     #[test]
@@ -141,7 +141,7 @@ mod tests {
         let mut conn = Connection::open_in_memory().unwrap();
         apply_migrations(&mut conn);
 
-        let code = Alphanumeric.sample_string(&mut rand::thread_rng(), TOKEN_LENGTH);
+        let code = Alphanumeric.sample_string(&mut rand::thread_rng(), AUTH_CODE_LENGTH);
         let response = get_entry_by_auth_code(code.as_str(), &conn);
         match response {
             Ok(_) => panic!("should not return OK"),
