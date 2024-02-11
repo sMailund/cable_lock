@@ -26,6 +26,7 @@ impl UserStore for UserStoreFake {
     }
 }
 
+#[derive(Debug)]
 pub struct User {
     pub(crate) username: String,
     pub(crate) hash: String,

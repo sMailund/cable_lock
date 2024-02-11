@@ -3,6 +3,7 @@ use std::process::exit;
 use clap::{arg, Command};
 use rusqlite::Connection;
 use rusqlite_migration::{M, Migrations};
+use crate::authentication::user_store::User;
 
 pub mod authentication;
 
@@ -59,7 +60,15 @@ fn main() {
             }
         }
         Some(("token", sub_matches)) => {
-            // TODO:
+            conn.execute("INSERT INTO user (username, password_hash, password_salt) VALUES ('test_user', 'hashed_password', 'random_salt');", ()).expect("failed to insert user");
+            let user = conn.query_row("SELECT username, password_hash, password_salt from user where username = 'test_user';", (), |row| {
+               Ok(User{
+                   username: row.get(0)?,
+                   hash: row.get(1)?,
+                   salt: row.get(2)?,
+               }) 
+            }).expect("failed to get user");
+            println!("{:?}", user);
         }
         _ => {
             cli().print_help().expect("failed to print help");
