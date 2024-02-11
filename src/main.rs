@@ -31,7 +31,7 @@ fn main() {
                     println!("requested {}", scope);
                 }
                 Err(err) => {
-                    println!("{}", err);
+                    eprintln!("{}", err);
                     exit(1)
                 }
             }
