@@ -43,7 +43,7 @@ fn main() {
                 }
             }
         }
-        Some(("token", sub_matches)) => {
+        Some(("token", _sub_matches)) => {
             // TODO
         }
         _ => {

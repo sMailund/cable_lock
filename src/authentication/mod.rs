@@ -1,9 +1,9 @@
 pub mod input_reader;
 pub mod user_store;
 
-use std::io::Write;
 
-use password_auth::{generate_hash, VerifyError};
+
+use password_auth::{VerifyError};
 
 const ERROR_INCORRECT_USER_NAME_OR_PASSWORD: &str = "incorrect username or password";
 

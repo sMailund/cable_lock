@@ -1,7 +1,7 @@
 use rand::distributions::{Alphanumeric, DistString};
-use rand::Rng;
+
 use rusqlite::{params, Connection, Error as RusqliteError};
-use std::error::Error;
+
 
 const TOKEN_LENGTH: usize = 32;
 
@@ -20,7 +20,7 @@ fn create_auth_code(
         params![&string, username, scopes_string],
     );
 
-    if (insert_result.is_err()) {
+    if insert_result.is_err() {
         Err("failed to insert to db".to_string())
     } else {
         Ok(string)
