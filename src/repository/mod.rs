@@ -1,3 +1,5 @@
+mod authorization_code_entry;
+
 use rand::distributions::{Alphanumeric, DistString};
 use rusqlite::{params, Connection, Error as RusqliteError};
 use rusqlite_migration::{Migrations, M};
@@ -62,7 +64,9 @@ mod tests {
     use rand::distributions::{Alphanumeric, DistString};
     use rusqlite::Connection;
 
-    use crate::repository::{apply_migrations, create_auth_code, get_entry_by_auth_code, TOKEN_LENGTH};
+    use crate::repository::{
+        apply_migrations, create_auth_code, get_entry_by_auth_code, TOKEN_LENGTH,
+    };
 
     #[test]
     fn should_return_generated_code() {
