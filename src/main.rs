@@ -1,11 +1,9 @@
 use std::process::exit;
 
 use clap::{arg, Command};
-use rusqlite::Connection;
-use rusqlite_migration::{M, Migrations};
-use crate::authentication::user_store::User;
 
 pub mod authentication;
+pub mod repository;
 
 fn cli() -> Command {
     Command::new("cable_lock")
@@ -30,16 +28,6 @@ fn cli() -> Command {
 
 
 fn main() {
-    let migrations = Migrations::new(vec![
-        M::up("create table authorization_code(auth_code TEXT PRIMARY KEY, subject TEXT NOT NULL, scopes TEXT NOT NULL);")
-            .down("drop table authorization_code;"),
-        M::up("create table user(username text NOT NULL UNIQUE, password_hash TEXT NOT NULL, password_salt TEXT NOT NULL);")
-            .down("drop table user;"),
-        // In the future, add more migrations here:
-        //M::up("ALTER TABLE friend ADD COLUMN email TEXT;"),
-    ]);
-    let mut conn = Connection::open_in_memory().unwrap();
-    migrations.to_latest(&mut conn).unwrap();
 
 
     let matches = cli().get_matches();
@@ -60,15 +48,7 @@ fn main() {
             }
         }
         Some(("token", sub_matches)) => {
-            conn.execute("INSERT INTO user (username, password_hash, password_salt) VALUES ('test_user', 'hashed_password', 'random_salt');", ()).expect("failed to insert user");
-            let user = conn.query_row("SELECT username, password_hash, password_salt from user where username = 'test_user';", (), |row| {
-               Ok(User{
-                   username: row.get(0)?,
-                   hash: row.get(1)?,
-                   salt: row.get(2)?,
-               }) 
-            }).expect("failed to get user");
-            println!("{:?}", user);
+            // TODO
         }
         _ => {
             cli().print_help().expect("failed to print help");
