@@ -1,9 +1,20 @@
 use rand::distributions::{Alphanumeric, DistString};
 
 use rusqlite::{params, Connection, Error as RusqliteError};
-
+use rusqlite_migration::{M, Migrations};
 
 const TOKEN_LENGTH: usize = 32;
+
+fn apply_migrations(mut conn: &mut Connection) {
+    let migrations = Migrations::new(vec![
+        M::up("create table authorization_code(auth_code TEXT PRIMARY KEY, subject TEXT NOT NULL, scopes TEXT NOT NULL);")
+            .down("drop table authorization_code;"),
+        M::up("create table user(username text NOT NULL UNIQUE, password_hash TEXT NOT NULL, password_salt TEXT NOT NULL);")
+            .down("drop table user;"),
+        // In the future, add more migrations here:
+    ]);
+    migrations.to_latest(&mut conn).unwrap();
+}
 
 fn create_auth_code(
     username: &str,
@@ -32,10 +43,9 @@ fn get_entry_by_auth_code(
     auth_code: &str,
     connection: &Connection,
 ) -> Result<Option<String>, RusqliteError> {
-    let mut statement = connection
-        .prepare("SELECT subject FROM authorization_code WHERE auth_code = ?1")?;
-    let mut rows = statement
-        .query(params![auth_code])?;
+    let mut statement =
+        connection.prepare("SELECT subject FROM authorization_code WHERE auth_code = ?1")?;
+    let mut rows = statement.query(params![auth_code])?;
 
     if let Some(row) = rows.next()? {
         let result = row.get(0);
@@ -54,25 +64,19 @@ mod tests {
     use rusqlite::Connection;
     use rusqlite_migration::{Migrations, M};
 
-    use crate::repository::{create_auth_code, get_entry_by_auth_code};
+    use crate::repository::{apply_migrations, create_auth_code, get_entry_by_auth_code};
 
     #[test]
     fn should_return_generated_code() {
-        let migrations = Migrations::new(vec![
-            M::up("create table authorization_code(auth_code TEXT PRIMARY KEY, subject TEXT NOT NULL, scopes TEXT NOT NULL);")
-                .down("drop table authorization_code;"),
-            M::up("create table user(username text NOT NULL UNIQUE, password_hash TEXT NOT NULL, password_salt TEXT NOT NULL);")
-                .down("drop table user;"),
-            // In the future, add more migrations here:
-            //M::up("ALTER TABLE friend ADD COLUMN email TEXT;"),
-        ]);
         let mut conn = Connection::open_in_memory().unwrap();
-        migrations.to_latest(&mut conn).unwrap();
+
+        apply_migrations(&mut conn);
 
         let scopes = vec!["scope"];
         let code = create_auth_code("user", scopes, &conn).unwrap();
         assert_ne!(0, code.len());
     }
+
 
     #[test]
     fn should_retrieve_stored_entry() {

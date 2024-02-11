@@ -1,9 +1,7 @@
 pub mod input_reader;
 pub mod user_store;
 
-
-
-use password_auth::{VerifyError};
+use password_auth::VerifyError;
 
 const ERROR_INCORRECT_USER_NAME_OR_PASSWORD: &str = "incorrect username or password";
 
