@@ -1,9 +1,14 @@
-mod authorization_code_entry;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
+
+use rand::distributions::{Alphanumeric, DistString};
+use rusqlite::{params, Connection};
+use rusqlite_migration::{Migrations, M};
 
 use crate::repository::authorization_code_entry::AuthorizationCodeEntry;
-use rand::distributions::{Alphanumeric, DistString};
-use rusqlite::{params, Connection, Error as RusqliteError};
-use rusqlite_migration::{Migrations, M};
+use crate::repository::DatabaseError::{ConnectionError, RowNotFound};
+
+mod authorization_code_entry;
 
 const TOKEN_LENGTH: usize = 32;
 
@@ -40,22 +45,40 @@ fn create_auth_code(
     }
 }
 
-// TODO return whole entry
+#[derive(Debug)]
+enum DatabaseError {
+    RowNotFound,
+    ConnectionError,
+    // Add more error variants as needed
+}
+
+impl Display for DatabaseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for DatabaseError {}
+
 fn get_entry_by_auth_code(
     auth_code: &str,
     connection: &Connection,
-) -> Result<Option<AuthorizationCodeEntry>, RusqliteError> {
+) -> Result<AuthorizationCodeEntry, DatabaseError> {
     let mut statement = connection
-        .prepare("SELECT subject, scopes FROM authorization_code WHERE auth_code = ?1")?;
-    let mut rows = statement.query_map(params![auth_code], |row| {
-        Ok(AuthorizationCodeEntry::new(row.get(0)?, row.get(1)?))
-    })?;
+        .prepare("SELECT subject, scopes FROM authorization_code WHERE auth_code = ?1")
+        .map_err(|_| ConnectionError)?;
+
+    let mut rows = statement
+        .query_map(params![auth_code], |row| {
+            Ok(AuthorizationCodeEntry::new(row.get(0)?, row.get(1)?))
+        })
+        .map_err(|_| ConnectionError)?;
 
     match rows.next() {
-        None => Ok(None),
+        None => Err(RowNotFound),
         Some(result) => match result {
-            Ok(result) => Ok(Some(result)),
-            Err(_) => Ok(None),
+            Ok(result) => Ok(result),
+            Err(_) => Err(RowNotFound),
         },
     }
 }
@@ -66,7 +89,7 @@ mod tests {
     use rusqlite::Connection;
 
     use crate::repository::{
-        apply_migrations, create_auth_code, get_entry_by_auth_code, TOKEN_LENGTH,
+        apply_migrations, create_auth_code, get_entry_by_auth_code, DatabaseError, TOKEN_LENGTH,
     };
 
     #[test]
@@ -87,10 +110,9 @@ mod tests {
 
         let scopes = vec!["scope"];
         let code = create_auth_code("user", scopes, &conn).unwrap();
-        let response =
-            get_entry_by_auth_code(code.as_str(), &conn).expect("failed to get by auth code");
+        let response = get_entry_by_auth_code(code.as_str(), &conn);
 
-        assert!(response.is_some());
+        assert!(response.is_ok());
         let auth_code_entry = response.unwrap();
         assert_eq!("user", auth_code_entry.subject);
     }
@@ -101,8 +123,10 @@ mod tests {
         apply_migrations(&mut conn);
 
         let code = Alphanumeric.sample_string(&mut rand::thread_rng(), TOKEN_LENGTH);
-        let response =
-            get_entry_by_auth_code(code.as_str(), &conn).expect("failed to get auth code");
-        assert!(response.is_none());
+        let response = get_entry_by_auth_code(code.as_str(), &conn);
+        match response {
+            Ok(_) => panic!("should not return OK"),
+            Err(err) => assert_eq!(DatabaseError::RowNotFound.to_string(), err.to_string()),
+        }
     }
 }
