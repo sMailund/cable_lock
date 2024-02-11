@@ -1,7 +1,6 @@
 use rand::distributions::{Alphanumeric, DistString};
-
 use rusqlite::{params, Connection, Error as RusqliteError};
-use rusqlite_migration::{M, Migrations};
+use rusqlite_migration::{Migrations, M};
 
 const TOKEN_LENGTH: usize = 32;
 
@@ -21,7 +20,7 @@ fn create_auth_code(
     scopes: Vec<&str>,
     connection: &Connection,
 ) -> Result<String, String> {
-    let string = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+    let string = Alphanumeric.sample_string(&mut rand::thread_rng(), TOKEN_LENGTH);
 
     // here
     let scopes_string = scopes.join(",");
@@ -62,9 +61,8 @@ fn get_entry_by_auth_code(
 mod tests {
     use rand::distributions::{Alphanumeric, DistString};
     use rusqlite::Connection;
-    use rusqlite_migration::{Migrations, M};
 
-    use crate::repository::{apply_migrations, create_auth_code, get_entry_by_auth_code};
+    use crate::repository::{apply_migrations, create_auth_code, get_entry_by_auth_code, TOKEN_LENGTH};
 
     #[test]
     fn should_return_generated_code() {
@@ -76,7 +74,6 @@ mod tests {
         let code = create_auth_code("user", scopes, &conn).unwrap();
         assert_ne!(0, code.len());
     }
-
 
     #[test]
     fn should_retrieve_stored_entry() {
@@ -98,7 +95,7 @@ mod tests {
         let mut conn = Connection::open_in_memory().unwrap();
         apply_migrations(&mut conn);
 
-        let code = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+        let code = Alphanumeric.sample_string(&mut rand::thread_rng(), TOKEN_LENGTH);
         let response =
             get_entry_by_auth_code(code.as_str(), &conn).expect("failed to get auth code");
         assert!(response.is_none());
