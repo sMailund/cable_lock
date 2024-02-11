@@ -33,10 +33,12 @@ pub fn create_auth_code(
 
     let scopes_string = scopes.join(",");
 
-    connection.execute(
-        "INSERT INTO authorization_code (auth_code, subject, scopes) VALUES (?1, ?2, ?3)",
-        params![&string, username, scopes_string],
-    ).map_err(|_| "failed to insert to db".to_string())?;
+    connection
+        .execute(
+            "INSERT INTO authorization_code (auth_code, subject, scopes) VALUES (?1, ?2, ?3)",
+            params![&string, username, scopes_string],
+        )
+        .map_err(|_| "failed to insert to db".to_string())?;
 
     Ok(string)
 }
